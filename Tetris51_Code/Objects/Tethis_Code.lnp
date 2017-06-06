@@ -1,0 +1,3 @@
+".\Objects\Tethis_Code.obj" 
+TO ".\Objects\Tethis_Code" 
+PRINT(".\Listings\Tethis_Code.m51") RAMSIZE(256) 

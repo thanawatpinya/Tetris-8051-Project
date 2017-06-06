@@ -1,0 +1,735 @@
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE TETHIS_CODE
+OBJECT MODULE PLACED IN .\Objects\Tethis_Code.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE Tethis_Code.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listin
+                    -gs\Tethis_Code.lst) TABS(2) OBJECT(.\Objects\Tethis_Code.obj)
+
+line level    source
+
+   1          #include <REGX52.H>
+   2          #include <stdlib.h>
+   3          
+   4          void shiftOut(char sdata, char Gdata, char seg);
+   5          void DataOut(unsigned int sdata, unsigned int Gdata, unsigned int seg);
+   6          void Move_Down(unsigned int x[8]);
+   7          void Move_Left();
+   8          void Move_Right();
+   9          void Random();
+  10          void Clear_Model(void);
+  11          int Check_Location();
+  12          void Move_Rotate();
+  13          void Move_One_Down();
+  14          void Check_Block();
+  15          void check_Game_Over();
+  16          void check_Line();
+  17          void Check_Button();
+  18          void Check_floor();
+  19          void Save();
+  20          
+  21          unsigned int model[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  22          unsigned int savemodel[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  23          unsigned int countpoint = 0x00;
+  24          
+  25          int j,omb,count,width; // value Global
+  26          int Boxtype;
+  27          // ====================== Main ===============================
+  28          void main() {
+  29   1        int i; // y1 and y2 for check left,right button push
+  30   1        P3 = 0; // All P3 = 0
+  31   1        P3_1 = 1; // Latch = 1 (Defualt)
+  32   1        P1_0 = 1; // P1_0 is Left button
+  33   1        P1_1 = 1; // P1_1 is Right button
+  34   1        P1_2 = 1;
+  35   1        P1_3 = 1; // P1_3 is DownOne button
+  36   1        count = 0;
+  37   1        
+  38   1        model[0] = 0x000C;
+  39   1        model[1] = 0x091E;
+  40   1        model[2] = 0xA93E;
+  41   1        model[3] = 0x467C;
+  42   1        model[4] = 0xF07C;
+  43   1        model[5] = 0x063E;
+  44   1        model[6] = 0x091E;
+  45   1        model[7] = 0x0F0C;
+  46   1        for(i=0;i<500;i++){
+  47   2            while(j < 8){
+  48   3              DataOut(~(model[j]|savemodel[j]), ~savemodel[j], countpoint);
+  49   3              j++;
+  50   3            }
+  51   2            j=0;
+  52   2          }
+  53   1        Clear_Model();
+  54   1        
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 2   
+
+  55   1        while(1) {
+  56   2          Random();
+  57   2          for(i=0;i<50;i++){
+  58   3            while(j < 8){
+  59   4              DataOut(~(model[j]|savemodel[j]), ~savemodel[j], countpoint);
+  60   4              Check_Button();
+  61   4              j++;
+  62   4            }
+  63   3            j=0;
+  64   3          }
+  65   2          // -------------- Check Stay On the Floor ------------------
+  66   2          Check_floor();
+  67   2          // ----------------------------------------------------------
+  68   2          count++;
+  69   2          Check_Block();
+  70   2          Move_Down(model);
+  71   2          check_Line();
+  72   2          check_Game_Over();
+  73   2          //delay1mSec(400);
+  74   2        }
+  75   1      }
+  76          
+  77          void Clear_Model(void){
+  78   1        int i;
+  79   1        for(i=0;i<8;i++){
+  80   2          model[i] = 0x0000;
+  81   2        }
+  82   1      }
+  83          
+  84          // ========================== Control ===========================
+  85          int BO,BL,BR,BRo;
+  86          void Check_Button(){
+  87   1        if(P1_0 == 1){
+  88   2          BL = 1;
+  89   2        }
+  90   1        if(P1_0 == 0 && BL == 1){
+  91   2          BL = 0;
+  92   2          Move_Left();
+  93   2        }
+  94   1        if(P1_1 == 1){
+  95   2          BR = 1;
+  96   2        }
+  97   1        if(P1_1 == 0 && BR ==1){
+  98   2          BR = 0;
+  99   2          Move_Right();
+ 100   2        }
+ 101   1        if(P1_2 == 1){
+ 102   2          BRo = 1;
+ 103   2        }
+ 104   1        if(P1_2 == 0 && BRo == 1){
+ 105   2          BRo = 0;
+ 106   2          Move_Rotate();
+ 107   2        }
+ 108   1        if(P1_3 == 1){
+ 109   2          BO = 1;
+ 110   2        }
+ 111   1        if(P1_3 == 0 && BO == 1){
+ 112   2          BO = 0;
+ 113   2          Move_One_Down();
+ 114   2        }
+ 115   1      }
+ 116          
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 3   
+
+ 117          void Move_Down(unsigned int x[8]){ // -------- Move Down ------
+ 118   1        int i;
+ 119   1        for(i=0;i<8;i++){
+ 120   2          x[i] = x[i]<<1; // 0000 0000 0000 0100
+ 121   2        }
+ 122   1      }
+ 123          
+ 124          void Move_Left(){   // ---------------- Move Left -------------
+ 125   1        int i,PB0=0;
+ 126   1        unsigned int k;
+ 127   1              if(model[7] == 0x0000){ 
+ 128   2                for(i=6;i>=0;i--){
+ 129   3                  k = model[i];
+ 130   3                  model[i] = model[i+1];
+ 131   3                  model[i+1] = k;
+ 132   3                }
+ 133   2              }
+ 134   1      }
+ 135          void Move_Right(){  // ---------------- Move Right ---------------
+ 136   1        int i,k;  
+ 137   1          if(model[0] == 0x0000){
+ 138   2            for(i=0;i<7;i++){
+ 139   3              k = model[i];
+ 140   3              model[i] = model[i+1];
+ 141   3              model[i+1] = k;
+ 142   3            }
+ 143   2          }
+ 144   1      }
+ 145          void Move_Rotate(){ // ----------------- Rotate ------------------
+ 146   1          switch(Boxtype)
+ 147   1            {
+ 148   2              case 0: // rotate Z
+ 149   2                if(model[0] != 0x0000){
+ 150   3                model[Check_Location()] = 0x04<<count;
+ 151   3                model[Check_Location()+2] = 0x02<<count;
+ 152   3                } else {
+ 153   3                model[Check_Location()-1] = 0x02<<count;
+ 154   3                model[Check_Location()+2] = 0x01<<count;
+ 155   3                }
+ 156   2                omb = 2;
+ 157   2                Boxtype = 4;
+ 158   2                width = 3;
+ 159   2              break;
+ 160   2              case 1: // rotate ----
+ 161   2                if(count == 13 || count == 14 || count == 15){
+ 162   3                model[Check_Location()] = 0x00;
+ 163   3                model[Check_Location()] = 0x0F<<12;
+ 164   3                model[Check_Location()+1] = 0x00;
+ 165   3                model[Check_Location()+2] = 0x00;
+ 166   3                } else {
+ 167   3                model[Check_Location()] = 0x00;
+ 168   3                model[Check_Location()] = 0x0F<<count;
+ 169   3                model[Check_Location()+1] = 0x00;
+ 170   3                model[Check_Location()+2] = 0x00;
+ 171   3                }
+ 172   2                omb = 4;
+ 173   2                Boxtype = 5;
+ 174   2                width = 1;
+ 175   2              break;
+ 176   2              case 2: // rotate L 
+ 177   2                if(model[0] != 0x0000){
+ 178   3                model[Check_Location()] = 0x02<<count;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 4   
+
+ 179   3                model[Check_Location()+1] = 0x02<<count;
+ 180   3                model[Check_Location()+2] = 0x03<<count;
+ 181   3                }
+ 182   2                model[Check_Location()-1] = 0x02<<count;
+ 183   2                model[Check_Location()+1] = 0x02<<count;
+ 184   2                model[Check_Location()+2] = 0x03<<count;
+ 185   2                omb = 2;
+ 186   2                Boxtype = 6;
+ 187   2                width = 3;
+ 188   2              break;
+ 189   2              case 3: // ratate |-
+ 190   2                model[Check_Location()] = 0x02<<count;
+ 191   2                model[Check_Location()+1] = 0x07<<count;
+ 192   2                model[Check_Location()+2] = 0x00;
+ 193   2                omb = 3;
+ 194   2                Boxtype = 9;
+ 195   2                width = 2;
+ 196   2              break;
+ 197   2              // ------------------ for defualt --------------------
+ 198   2              case 4: // rotate Z
+ 199   2                if(count == 14){
+ 200   3                model[Check_Location()] = 0x00;
+ 201   3                model[Check_Location()] = 0x03<<13;
+ 202   3                model[Check_Location()+1] = 0x06<<13;
+ 203   3                } else{
+ 204   3                model[Check_Location()] = 0x00;
+ 205   3                model[Check_Location()] = 0x03<<count;
+ 206   3                model[Check_Location()+1] = 0x06<<count;
+ 207   3                }
+ 208   2                omb = 3;
+ 209   2                Boxtype = 0;
+ 210   2                width = 2;
+ 211   2              break;
+ 212   2              case 5: // rotate ----
+ 213   2                if(count == 13 || count == 14 || count == 15){
+ 214   3                  break;
+ 215   3                }
+ 216   2                if(model[5] != 0 || model[6] != 0 || model[7] != 0){
+ 217   3                model[4] = 0x01<<count;
+ 218   3                model[5] = 0x01<<count;
+ 219   3                model[6] = 0x01<<count;
+ 220   3                model[7] = 0x01<<count;
+ 221   3                } else if(model[0] != 0){
+ 222   3                model[0] = 0x01<<count;
+ 223   3                model[1] = 0x01<<count;
+ 224   3                model[2] = 0x01<<count;
+ 225   3                model[3] = 0x01<<count;
+ 226   3                } else{
+ 227   3                model[Check_Location()-1] = 0x01<<count;
+ 228   3                model[Check_Location()+1] = 0x01<<count;
+ 229   3                model[Check_Location()+2] = 0x01<<count;
+ 230   3                model[Check_Location()+3] = 0x01<<count;
+ 231   3                }
+ 232   2                omb = 1;
+ 233   2                Boxtype = 1;
+ 234   2                width = 4;
+ 235   2              break;
+ 236   2              case 6: // rotate L
+ 237   2                if(count == 14 || count == 15){
+ 238   3                model[Check_Location()] = 0x01<<13;
+ 239   3                model[Check_Location()+1] = 0x07<<13;
+ 240   3                model[Check_Location()+2] = 0x00;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 5   
+
+ 241   3                } else{
+ 242   3                model[Check_Location()] = 0x01<<count;
+ 243   3                model[Check_Location()+1] = 0x07<<count;
+ 244   3                model[Check_Location()+2] = 0x00;
+ 245   3                }
+ 246   2                omb = 3;
+ 247   2                Boxtype = 7;
+ 248   2                width = 2;
+ 249   2              break;
+ 250   2              case 7: // rotate L
+ 251   2                if(model[7] != 0x0000){
+ 252   3                model[Check_Location()-1] = 0x03<<count;
+ 253   3                model[Check_Location()+1] = 0x01<<count;
+ 254   3                model[Check_Location()+2] = 0x01<<count;
+ 255   3                }
+ 256   2                model[Check_Location()] = 0x03<<count;
+ 257   2                model[Check_Location()+1] = 0x01<<count;
+ 258   2                model[Check_Location()+2] = 0x01<<count;
+ 259   2                omb = 2;
+ 260   2                Boxtype = 8;
+ 261   2                width = 2;
+ 262   2              break;
+ 263   2              case 8: // rotate L
+ 264   2                if(count == 14){
+ 265   3                model[Check_Location()] = 0x00;
+ 266   3                model[Check_Location()] = 0x07<<13;
+ 267   3                model[Check_Location()+1] = 0x04<<13;
+ 268   3                } else{
+ 269   3                model[Check_Location()] = 0x00;
+ 270   3                model[Check_Location()] = 0x07<<count;
+ 271   3                model[Check_Location()+1] = 0x04<<count;
+ 272   3                }
+ 273   2                omb = 3;
+ 274   2                Boxtype = 2;
+ 275   2                width = 2;
+ 276   2              break;
+ 277   2              case 9: // rotate -.-
+ 278   2                if(model[7] != 0x0000){
+ 279   3                model[Check_Location()-1] = 0x02<<count;
+ 280   3                model[Check_Location()+1] = 0x06<<count;
+ 281   3                model[Check_Location()+2] = 0x02<<count;  
+ 282   3                } else {
+ 283   3                model[Check_Location()+1] = 0x06<<count;
+ 284   3                model[Check_Location()+2] = 0x02<<count;
+ 285   3                }
+ 286   2                omb = 3;
+ 287   2                Boxtype = 10;
+ 288   2                width = 2;
+ 289   2              break;
+ 290   2              case 10: // ratate -|
+ 291   2                model[Check_Location()] = 0x00;
+ 292   2                model[Check_Location()] = 0x07<<count;
+ 293   2                model[Check_Location()+1] = 0x02<<count;
+ 294   2                omb = 3;
+ 295   2                Boxtype = 11;
+ 296   2                width = 2;
+ 297   2              break;
+ 298   2              case 11: // ratate -'-
+ 299   2                if(model[0] != 0x0000){
+ 300   3                model[Check_Location()] = 0x02<<count;
+ 301   3                model[Check_Location()+1] = 0x03<<count;
+ 302   3                model[Check_Location()+2] = 0x02<<count;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 6   
+
+ 303   3                } else{ 
+ 304   3                model[Check_Location()-1] = 0x02<<count;
+ 305   3                model[Check_Location()+1] = 0x03<<count;
+ 306   3                model[Check_Location()+2] = 0x02<<count;
+ 307   3                }
+ 308   2                omb = 2;
+ 309   2                Boxtype = 3;
+ 310   2                width = 2;
+ 311   2              break;
+ 312   2              case 12: // rotate Z reverse
+ 313   2                if(model[7] != 0x0000){
+ 314   3                model[Check_Location()-1] = 0x01<<count;
+ 315   3                model[Check_Location()+1] = 0x03<<count;
+ 316   3                model[Check_Location()+2] = 0x02<<count;
+ 317   3                } else {
+ 318   3                model[Check_Location()] = 0x01<<count;
+ 319   3                model[Check_Location()+2] = 0x02<<count;
+ 320   3                }
+ 321   2                omb = 2;
+ 322   2                Boxtype = 13;
+ 323   2                width = 3;
+ 324   2              break;
+ 325   2              case 13: // rotate Z reverse
+ 326   2                if(count == 14){
+ 327   3                model[Check_Location()] = 0x06<<13;
+ 328   3                model[Check_Location()+1] = 0x03<<13;
+ 329   3                model[Check_Location()+2] = 0x00;
+ 330   3                } else{
+ 331   3                model[Check_Location()] = 0x06<<count;
+ 332   3                model[Check_Location()+1] = 0x03<<count;
+ 333   3                model[Check_Location()+2] = 0x00;
+ 334   3                }
+ 335   2                omb = 3;
+ 336   2                Boxtype = 12;
+ 337   2                width = 2;
+ 338   2              break;
+ 339   2              case 14: // rotate L reverse
+ 340   2                if(model[0] != 0x0000){
+ 341   3                model[Check_Location()] = 0x01<<count;
+ 342   3                model[Check_Location()+1] = 0x01<<count;
+ 343   3                model[Check_Location()+2] = 0x03<<count;
+ 344   3                } else{
+ 345   3                model[Check_Location()-1] = 0x01<<count;
+ 346   3                model[Check_Location()+1] = 0x01<<count;
+ 347   3                model[Check_Location()+2] = 0x03<<count;
+ 348   3                }
+ 349   2                omb = 2;
+ 350   2                Boxtype = 15;
+ 351   2                width = 3;
+ 352   2              break;
+ 353   2              case 15: // rotate L reverse
+ 354   2                if(count == 14 || count == 15){
+ 355   3                model[Check_Location()] = 0x07<<13;
+ 356   3                model[Check_Location()+1] = 0x01<<13;
+ 357   3                model[Check_Location()+2] = 0x00;
+ 358   3                } else{
+ 359   3                model[Check_Location()] = 0x07<<count;
+ 360   3                model[Check_Location()+1] = 0x01<<count;
+ 361   3                model[Check_Location()+2] = 0x00;
+ 362   3                }
+ 363   2                omb = 3;
+ 364   2                Boxtype = 16;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 7   
+
+ 365   2                width = 2;
+ 366   2              break;
+ 367   2              case 16: // rotate L reverse
+ 368   2                if(model[7] != 0x0000){
+ 369   3                model[Check_Location()-1] = 0x03<<count;
+ 370   3                model[Check_Location()+1] = 0x02<<count;
+ 371   3                model[Check_Location()+2] = 0x02<<count;
+ 372   3                }
+ 373   2                model[Check_Location()] = 0x03<<count;
+ 374   2                model[Check_Location()+1] = 0x02<<count;
+ 375   2                model[Check_Location()+2] = 0x02<<count;
+ 376   2                omb = 2;
+ 377   2                Boxtype = 17;
+ 378   2                width = 2;
+ 379   2              break;
+ 380   2              case 17: // rotate L reverse
+ 381   2                if(count == 14){
+ 382   3                model[Check_Location()] = 0x00;
+ 383   3                model[Check_Location()] = 0x04<<13;
+ 384   3                model[Check_Location()+1] = 0x07<<13;
+ 385   3                } else{
+ 386   3                model[Check_Location()] = 0x00;
+ 387   3                model[Check_Location()] = 0x04<<count;
+ 388   3                model[Check_Location()+1] = 0x07<<count;
+ 389   3                }
+ 390   2                omb = 3;
+ 391   2                Boxtype = 14;
+ 392   2                width = 2;
+ 393   2              break;
+ 394   2            }
+ 395   1      }
+ 396          
+ 397          void Move_One_Down(){ // ---------- One push for down all --------
+ 398   1        int i,j;
+ 399   1        for(i=16-count;i>=0;i--){
+ 400   2          Check_floor();
+ 401   2          Check_Block();
+ 402   2          Move_Down(model);
+ 403   2          if(i==(1+omb)){
+ 404   3            for(j=0;j<8;j++){
+ 405   4              savemodel[j] = savemodel[j] | model[j];
+ 406   4            }
+ 407   3            Clear_Model();
+ 408   3            break;
+ 409   3          }
+ 410   2        }
+ 411   1      }
+ 412          
+ 413          // ======================= Check Block =========================
+ 414          void Check_Block(){
+ 415   1        int i,k;
+ 416   1        for(i=0;i<8;i++){
+ 417   2          for(k=0;k<8;k++){
+ 418   3            if((model[k]<<1)&savemodel[k]){ 
+ 419   4              for(j=0;j<8;j++){
+ 420   5                  savemodel[j] = savemodel[j] | model[j];
+ 421   5               }
+ 422   4              Clear_Model();
+ 423   4            }
+ 424   3          }
+ 425   2        }
+ 426   1      }
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 8   
+
+ 427          void Check_floor(){
+ 428   1        if(count == 15 && omb == 1){Save(); Clear_Model();}
+ 429   1          if(count == 14 && omb == 2){  Save(); Clear_Model();}
+ 430   1          if(count == 13 && omb == 3 || count == 14 && omb == 3 || count == 15 && omb == 3){  Save(); Clear_Model()
+             -;}
+ 431   1          if(count == 12 && omb == 4 || count == 13 && omb == 4 || count == 14 && omb == 4 || count == 15 && omb =
+             -= 4){  Save();  Clear_Model();}
+ 432   1      }
+ 433          void Save(){
+ 434   1        int i;
+ 435   1           for(i=0;i<8;i++){
+ 436   2                savemodel[i] = savemodel[i] | model[i];
+ 437   2            }
+ 438   1      }
+ 439          // ========================= Random ==========================
+ 440          void Random(){
+ 441   1          if(model[0]==0x0000&&model[1]==0x0000&&model[2]==0x0000&&model[3]==0x0000&&
+ 442   1            model[4]==0x0000&&model[5]==0x0000&&model[6]==0x0000&&model[7]==0x0000){
+ 443   2            switch(rand()%7)
+ 444   2            {
+ 445   3              case 0: // Z
+ 446   3                model[3] = 0x0003;
+ 447   3                model[4] = 0x0006;
+ 448   3                omb = 3;
+ 449   3                Boxtype = 0;
+ 450   3                width = 2;
+ 451   3                break;
+ 452   3              case 1: // []
+ 453   3                model[3] = 0x0003;
+ 454   3                model[4] = 0x0003;
+ 455   3                omb = 2;
+ 456   3                Boxtype = -1;
+ 457   3                width = 2;
+ 458   3                break;
+ 459   3              case 2: // ----
+ 460   3                model[2] = 0x0001;
+ 461   3                model[3] = 0x0001;
+ 462   3                model[4] = 0x0001;
+ 463   3                model[5] = 0x0001; 
+ 464   3                omb = 1;
+ 465   3                Boxtype = 1;
+ 466   3                width = 4; 
+ 467   3                break;
+ 468   3              case 3: // L
+ 469   3                model[3] = 0x0007;
+ 470   3                model[4] = 0x0004;
+ 471   3                omb = 3;
+ 472   3                Boxtype = 2;
+ 473   3                width = 2;
+ 474   3                break;
+ 475   3              case 4: // -'-
+ 476   3                model[3] = 0x0002;
+ 477   3                model[4] = 0x0003;
+ 478   3                model[5] = 0x0002;
+ 479   3                omb = 2;
+ 480   3                Boxtype = 3;
+ 481   3                width = 2;
+ 482   3                break;
+ 483   3              case 5: // Z Reverse
+ 484   3                model[3] = 0x0006;
+ 485   3                model[4] = 0x0003;
+ 486   3                omb = 3;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 9   
+
+ 487   3                Boxtype = 12;
+ 488   3                width = 3;
+ 489   3                break;
+ 490   3              case 6: // L Reverse
+ 491   3                model[3] = 0x0004;
+ 492   3                model[4] = 0x0007;
+ 493   3                omb = 3;
+ 494   3                Boxtype = 14;
+ 495   3                width = 2;
+ 496   3                break;
+ 497   3            }
+ 498   2            count = 0;
+ 499   2          }
+ 500   1      }
+ 501          
+ 502          // ======================== Output ===========================
+ 503          int ibit=0;
+ 504          void shiftOut(char Rdata, char Gdata, char seg) {
+ 505   1        for(ibit=7;ibit>=0;ibit--) {
+ 506   2          P3_2 = (Rdata>>ibit)&0x01;
+ 507   2          P3_3 = (Gdata>>ibit)&0x01;
+ 508   2          P3_4 = (seg>>ibit)&0x01;
+ 509   2          P3_0=1; // clock
+ 510   2          P3_0=0; // clock
+ 511   2        }
+ 512   1        P3_2=0;
+ 513   1      }
+ 514          void DataOut(unsigned int Rdata, unsigned int Gdata,unsigned int seg) {
+ 515   1        P3_1=0; // Latch = 0 (Start to send bit)
+ 516   1        shiftOut(Rdata>>8, Gdata>>8, seg>>8); // (send high bit first) 
+ 517   1        shiftOut(Rdata&0xFF, Gdata&0xFF, seg&0xFF); // (send low bit second)
+ 518   1        P2=(1<<j); // Refresh P2 for Outout
+ 519   1        P3_1=1; // Latch = 1 (End send bit)
+ 520   1      }
+ 521          
+ 522          // ===================== etc. Function =======================
+ 523          int Check_Location(){
+ 524   1        int i;
+ 525   1        for(i=0;i<8;i++){
+ 526   2          if(model[i] != 0x0000){
+ 527   3            return i;
+ 528   3            break;
+ 529   3          }
+ 530   2        }
+ 531   1        return -1;
+ 532   1      }
+ 533          
+ 534          void check_Game_Over(){
+ 535   1        int i,j;
+ 536   1        for(i=0;i<8;i++){
+ 537   2          if((savemodel[i]&0x0001)==1){ 
+ 538   3            Clear_Model();
+ 539   3            countpoint = 0x00;
+ 540   3            for(j=0;j<8;j++){
+ 541   4              savemodel[j] = 0x0000;
+ 542   4            }
+ 543   3          }
+ 544   2        }
+ 545   1      }
+ 546          void check_Line(){
+ 547   1        int j,k,b,p;
+ 548   1        unsigned int i,Mem = 0x0000;
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 10  
+
+ 549   1        k=0;
+ 550   1        for(i=0x0001;i;i<<=1){
+ 551   2          for(j=0;j<8;j++){
+ 552   3            if(savemodel[j]&i){
+ 553   4              k++;
+ 554   4            }
+ 555   3            if(k == 8){
+ 556   4              for(b=0;b<8;b++){
+ 557   5                savemodel[b] = savemodel[b] & ~i;
+ 558   5              }
+ 559   4              if(i == 0x8000){      // Floor number 1
+ 560   5                Move_Down(savemodel); 
+ 561   5              }
+ 562   4              if(i == 0x4000){      // Floor number 2
+ 563   5                for(p=0;p<8;p++){
+ 564   6                  Mem = savemodel[p] & 0x7FFF;
+ 565   6                  savemodel[p] = savemodel[p] & 0x8000;
+ 566   6                  Mem = Mem << 1;
+ 567   6                  savemodel[p] = savemodel[p] | Mem;
+ 568   6                }
+ 569   5              }
+ 570   4              if(i == 0x2000){      // Floor number 3
+ 571   5                for(p=0;p<8;p++){
+ 572   6                  Mem = savemodel[p] & 0x3FFF;
+ 573   6                  savemodel[p] = savemodel[p] & 0xC000;
+ 574   6                  Mem = Mem << 1;
+ 575   6                  savemodel[p] = savemodel[p] | Mem;
+ 576   6                }
+ 577   5              }
+ 578   4              if(i == 0x1000){      // Floor number 4
+ 579   5                for(p=0;p<8;p++){
+ 580   6                  Mem = savemodel[p] & 0x1FFF;
+ 581   6                  savemodel[p] = savemodel[p] & 0xE000;
+ 582   6                  Mem = Mem << 1;
+ 583   6                  savemodel[p] = savemodel[p] | Mem;
+ 584   6                }
+ 585   5              }
+ 586   4              if(i == 0x0800){      // Floor number 5
+ 587   5                for(p=0;p<8;p++){
+ 588   6                  Mem = savemodel[p] & 0x0FFF;
+ 589   6                  savemodel[p] = savemodel[p] & 0xF000;
+ 590   6                  Mem = Mem << 1;
+ 591   6                  savemodel[p] = savemodel[p] | Mem;
+ 592   6                }
+ 593   5              }
+ 594   4              if(i == 0x0400){      // Floor number 6
+ 595   5                for(p=0;p<8;p++){
+ 596   6                  Mem = savemodel[p] & 0x07FF;
+ 597   6                  savemodel[p] = savemodel[p] & 0xF800;
+ 598   6                  Mem = Mem << 1;
+ 599   6                  savemodel[p] = savemodel[p] | Mem;
+ 600   6                }
+ 601   5              }
+ 602   4              if(i == 0x0200){      // Floor number 7
+ 603   5                for(p=0;p<8;p++){
+ 604   6                  Mem = savemodel[p] & 0x03FF;
+ 605   6                  savemodel[p] = savemodel[p] & 0xFC00;
+ 606   6                  Mem = Mem << 1;
+ 607   6                  savemodel[p] = savemodel[p] | Mem;
+ 608   6                }
+ 609   5              }
+ 610   4              if(i == 0x0100){      // Floor number 8
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 11  
+
+ 611   5                for(p=0;p<8;p++){
+ 612   6                  Mem = savemodel[p] & 0x01FF;
+ 613   6                  savemodel[p] = savemodel[p] & 0xFF00;
+ 614   6                  Mem = Mem << 1;
+ 615   6                  savemodel[p] = savemodel[p] | Mem;
+ 616   6                }
+ 617   5              }
+ 618   4              if(i == 0x0080){      // Floor number 9
+ 619   5                for(p=0;p<8;p++){
+ 620   6                  Mem = savemodel[p] & 0x007F;
+ 621   6                  savemodel[p] = savemodel[p] & 0xFF80;
+ 622   6                  Mem = Mem << 1;
+ 623   6                  savemodel[p] = savemodel[p] | Mem;
+ 624   6                }
+ 625   5              }
+ 626   4              if(i == 0x0040){      // Floor number 10
+ 627   5                for(p=0;p<8;p++){
+ 628   6                  Mem = savemodel[p] & 0x003F;
+ 629   6                  savemodel[p] = savemodel[p] & 0xFFC0;
+ 630   6                  Mem = Mem << 1;
+ 631   6                  savemodel[p] = savemodel[p] | Mem;
+ 632   6                }
+ 633   5              }
+ 634   4              if(i == 0x0020){      // Floor number 11
+ 635   5                for(p=0;p<8;p++){
+ 636   6                  Mem = savemodel[p] & 0x001F;
+ 637   6                  savemodel[p] = savemodel[p] & 0xFFE0;
+ 638   6                  Mem = Mem << 1;
+ 639   6                  savemodel[p] = savemodel[p] | Mem;
+ 640   6                }
+ 641   5              }
+ 642   4              if(i == 0x0010){      // Floor number 12
+ 643   5                for(p=0;p<8;p++){
+ 644   6                  Mem = savemodel[p] & 0x000F;
+ 645   6                  savemodel[p] = savemodel[p] & 0xFFF0;
+ 646   6                  Mem = Mem << 1;
+ 647   6                  savemodel[p] = savemodel[p] | Mem;
+ 648   6                }
+ 649   5              }
+ 650   4              if(i == 0x0008){      // Floor number 13
+ 651   5                for(p=0;p<8;p++){
+ 652   6                  Mem = savemodel[p] & 0x0007;
+ 653   6                  savemodel[p] = savemodel[p] & 0xFFF8;
+ 654   6                  Mem = Mem << 1;
+ 655   6                  savemodel[p] = savemodel[p] | Mem;
+ 656   6                }
+ 657   5              }
+ 658   4              if(i == 0x0004){      // Floor number 14
+ 659   5                for(p=0;p<8;p++){
+ 660   6                  Mem = savemodel[p] & 0x0003;
+ 661   6                  savemodel[p] = savemodel[p] & 0xFFFC;
+ 662   6                  Mem = Mem << 1;
+ 663   6                  savemodel[p] = savemodel[p] | Mem;
+ 664   6                }
+ 665   5              }
+ 666   4              if(i == 0x0002){      // Floor number 15    And Floor number 16 GameOver
+ 667   5                for(p=0;p<8;p++){
+ 668   6                  Mem = savemodel[p] & 0x0002;
+ 669   6                  savemodel[p] = savemodel[p] & 0xFFFE;
+ 670   6                  Mem = Mem << 1;
+ 671   6                  savemodel[p] = savemodel[p] | Mem;
+ 672   6                }
+C51 COMPILER V9.55   TETHIS_CODE                                                           01/09/2017 17:14:34 PAGE 12  
+
+ 673   5              }
+ 674   4              countpoint = countpoint + 1;
+ 675   4              if(countpoint == 0x0A || countpoint == 0x1A || countpoint == 0x2A || countpoint == 0x3A
+ 676   4                || countpoint == 0x4A || countpoint == 0x5A || countpoint == 0x6A || countpoint == 0x7A
+ 677   4                || countpoint == 0x8A){
+ 678   5                countpoint = countpoint + 6;
+ 679   5              }
+ 680   4                break;
+ 681   4            }
+ 682   3          }
+ 683   2          k=0;
+ 684   2        }
+ 685   1      }
+ 686          
+ 687          // ===========================================================
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   6543    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     54      27
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
