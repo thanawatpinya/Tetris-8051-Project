@@ -28,11 +28,11 @@ int Boxtype;
 void main() {
 	int i; // y1 and y2 for check left,right button push
 	P3 = 0; // All P3 = 0
-  P3_1 = 1; // Latch = 1 (Defualt)
+  	P3_1 = 1; // Latch = 1 (Defualt)
 	P1_0 = 1; // P1_0 is Left button
 	P1_1 = 1; // P1_1 is Right button
 	P1_2 = 1;
-	P1_3 = 1;	// P1_3 is DownOne button
+	P1_3 = 1; // P1_3 is DownOne button
 	count = 0;
 	
 	model[0] = 0x000C;
